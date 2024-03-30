@@ -1,0 +1,116 @@
+{
+  "name": "oscd-remove-ieds",
+  "description": "Allow importing IEC 61850 IEDs into an OpenSCD project",
+  "license": "Apache-2.0",
+  "author": "Daniel Mulholland",
+  "version": "0.0.0",
+  "main": "dist/oscd-remove-ieds.js",
+  "module": "dist/oscd-remove-ieds.js",
+  "exports": {
+    ".": "./dist/oscd-remove-ieds.js"
+  },
+  "scripts": {
+    "start": "npm run build && concurrently -k -r \"tsc -b --watch --preserveWatchOutput\" \"wds\"",
+    "start:build": "npm run build && es-dev-server --root-dir dist --app-index index.html --compatibility none --open",
+    "start:bundle": "npm run bundle && es-dev-server --root-dir dist --app-index index.html --compatibility none --open",
+    "test": "playwright install && wtr --coverage",
+    "test:watch": "npm run build && concurrently -k -r \"tsc -b --watch --preserveWatchOutput\" \"wtr --watch --coverage\"",
+    "test:update": "npm run build && wtr --update-visual-baseline",
+    "analyze": "cem analyze --litelement",
+    "deploy": "npm run bundle && gh-pages --dist 'dist'",
+    "build": "npm run compile",
+    "compile": "tsc -b",
+    "bundle": "rimraf dist && rollup -c rollup.config.js",
+    "doc": "npm run analyze -- --exclude dist && typedoc ./*.ts --out dist/doc",
+    "prepublish": "npm run lint && npm run build && npm run doc",
+    "lint": "eslint --ext .ts,.html . --ignore-path .gitignore && prettier --ignore-path .gitignore --check . --",
+    "format": "eslint --ext .ts,.html . --fix --ignore-path .gitignore && prettier --ignore-path .gitignore --write .",
+    "prepare": "husky install"
+  },
+  "dependencies": {
+    "@material/web": "^1.1.1",
+    "@openenergytools/filterable-lists": "^0.0.3",
+    "@openenergytools/scl-lib": "^0.12.2",
+    "@openscd/open-scd-core": "^0.0.2",
+    "eslint-plugin-lit": "^1.11.0",
+    "lit": "^3.1.0"
+  },
+  "devDependencies": {
+    "@custom-elements-manifest/analyzer": "^0.9.0",
+    "@open-wc/eslint-config": "^12.0.2",
+    "@open-wc/testing": "^4.0.0",
+    "@rollup/plugin-node-resolve": "^15.2.3",
+    "@rollup/plugin-typescript": "^11.1.5",
+    "@typescript-eslint/eslint-plugin": "^6.15.0",
+    "@typescript-eslint/parser": "^6.15.0",
+    "@web/dev-server": "^0.4.1",
+    "@web/rollup-plugin-import-meta-assets": "^2.2.1",
+    "@web/test-runner": "^0.18.0",
+    "@web/test-runner-playwright": "^0.11.0",
+    "concurrently": "^8.2.2",
+    "es-dev-server": "^2.1.0",
+    "eslint": "^8.56.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-tsdoc": "^0.2.17",
+    "gh-pages": "^6.1.0",
+    "husky": "^8.0.3",
+    "lint-staged": "^15.2.0",
+    "prettier": "^3.1.1",
+    "rimraf": "^5.0.5",
+    "rollup-plugin-copy": "^3.5.0",
+    "tslib": "^2.6.2",
+    "typedoc": "^0.25.4",
+    "typescript": "^5.1.0"
+  },
+  "customElements": "custom-elements.json",
+  "eslintConfig": {
+    "parser": "@typescript-eslint/parser",
+    "extends": [
+      "@open-wc",
+      "prettier"
+    ],
+    "plugins": [
+      "@typescript-eslint"
+    ],
+    "rules": {
+      "@typescript-eslint/no-unused-vars": [
+        "error"
+      ],
+      "import/no-unresolved": "off",
+      "import/extensions": [
+        "error",
+        "always",
+        {
+          "ignorePackages": true
+        }
+      ],
+      "import/no-extraneous-dependencies": [
+        "error",
+        {
+          "devDependencies": [
+            "**/*.spec.ts"
+          ]
+        }
+      ],
+      "lit/no-classfield-shadowing": "off",
+      "no-duplicate-imports": "off",
+      "no-unused-vars": "off",
+      "no-redeclare": "off"
+    }
+  },
+  "prettier": {
+    "singleQuote": true,
+    "arrowParens": "avoid"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "*.ts": [
+      "eslint --fix",
+      "prettier --write"
+    ]
+  }
+}
