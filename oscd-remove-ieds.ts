@@ -14,6 +14,8 @@ import type {
 
 import { newEditEvent } from '@openscd/open-scd-core';
 import { removeIED } from '@openenergytools/scl-lib';
+import { MdOutlinedTextField } from '@material/web/textfield/outlined-text-field';
+import { MdCheckbox } from '@material/web/checkbox/checkbox';
 
 function getIedDescription(ied: Element): {
   firstLine: string;
@@ -76,17 +78,6 @@ export default class RemoveIEDsPlugin extends LitElement {
   @query('#selection-list') selectionList!: SelectionList;
 
   async run() {
-    this.items = Array.from(this.doc.querySelectorAll('IED')).map(ied => {
-      const { firstLine, secondLine } = getIedDescription(ied);
-
-      return {
-        headline: `${ied.getAttribute('name')!} — ${firstLine}`,
-        supportingText: secondLine,
-        attachedElement: ied,
-        selected: false,
-      };
-    });
-
     this.dialogUI.show();
   }
 
@@ -95,26 +86,69 @@ export default class RemoveIEDsPlugin extends LitElement {
 
     for await (const ied of ieds) {
       this.dispatchEvent(newEditEvent(removeIED({ node: ied })));
+    }
 
-      // TODO: Fixme -- ugly timeout that might resolve with newer versions of OpenSCD core
-      // await setTimeout(() => {}, 100);
+    // TODO: Slightly dubious way to clear out selections
+    this.clearSelection();
+  }
+
+  clearSelection(): void {
+    if (this.selectionList) {
+      (
+        Array.from(
+          this.selectionList.shadowRoot!.querySelectorAll(
+            'md-list.listitems md-list-item md-checkbox',
+          ),
+        ) as MdCheckbox[]
+      ).forEach((cb): void => {
+        if (cb.checked) {
+          // eslint-disable-next-line no-param-reassign
+          cb.checked = false;
+          cb.dispatchEvent(new Event('change'));
+          cb.requestUpdate();
+        }
+      });
+
+      const searchField = (this.selectionList.shadowRoot!.querySelector(
+        'md-outlined-text-field[placeholder="search"]',
+      ) as MdOutlinedTextField)!;
+      searchField.value = '';
+      searchField.dispatchEvent(new Event('input'));
     }
   }
 
   render() {
     return html`<md-dialog
       id="selection-dialog"
-      @cancel=${(event: Event) => event.preventDefault()}
+      @cancel=${(event: Event) => {
+        event.preventDefault();
+        this.clearSelection();
+      }}
     >
       <form slot="content" id="selection" method="dialog">
         <selection-list
           id="selection-list"
-          .items=${this.items}
+          .items=${Array.from(this.doc?.querySelectorAll('IED') ?? []).map(
+            ied => {
+              const { firstLine, secondLine } = getIedDescription(ied);
+
+              return {
+                headline: `${ied.getAttribute('name')!} — ${firstLine}`,
+                supportingText: secondLine,
+                attachedElement: ied,
+                selected: false,
+              };
+            },
+          )}
           filterable
         ></selection-list>
       </form>
       <div slot="actions">
-        <md-text-button @click=${() => this.dialogUI.close()}
+        <md-text-button
+          @click=${() => {
+            this.dialogUI.close();
+            this.clearSelection();
+          }}
           >Close</md-text-button
         >
         <md-text-button
